@@ -20,21 +20,17 @@
 <div id="root"></div>
 
 <!-- ============================================================
-     CONFIGURATION — edit these before deploying
-     ============================================================
-     GIST_ID: Create a PUBLIC gist at https://gist.github.com
-       with a file called "draft.json" containing: {}
-       Then paste the gist ID (the long hex string in the URL) here.
-     GIST_TOKEN: Create a GitHub Personal Access Token with
-       "gist" scope at https://github.com/settings/tokens
-       and paste it here. This allows saving picks.
-       (Anyone with the page URL can make picks — honor system.)
-     ============================================================ -->
+  CONFIGURATION
+  1. Sign up free at https://jsonbin.io
+  2. Go to API Keys → Create Access Key → copy it
+  3. Click "New Bin", paste in {} as content, click Create
+  4. Copy the Bin ID from the URL or response
+  5. Paste both values below
+  ============================================================ -->
 <script>
   window.DRAFT_CONFIG = {
-    GIST_ID:    "YOUR_GIST_ID_HERE",
-    GIST_TOKEN: "YOUR_GITHUB_TOKEN_HERE",
-    GIST_FILE:  "draft.json",
+    BIN_ID:     "69a9e4d9ae596e708f6328f3",
+    ACCESS_KEY: "$2a$10$EL1MYjX3QurIiGkwqyL/M.OJuQf7W/EFHCodoJAzQ0eum8WKd66KS",
     POLL_MS:    8000,
   };
 </script>
@@ -103,43 +99,41 @@ const PICK_ORDER = [
   ...PLAYERS_R2.map((p,i) => ({ pickNum:i+12, round:2, player:p, pool:"B" })),
 ];
 
-// ── Gist storage ──────────────────────────────────────────────────────────
-const { GIST_ID, GIST_TOKEN, GIST_FILE, POLL_MS } = window.DRAFT_CONFIG;
-const NOT_CONFIGURED = GIST_ID === "YOUR_GIST_ID_HERE";
+// ── JSONBin storage ───────────────────────────────────────────────────────
+const { BIN_ID, ACCESS_KEY, POLL_MS } = window.DRAFT_CONFIG;
+const NOT_CONFIGURED = BIN_ID === "YOUR_BIN_ID_HERE";
+const JSONBIN_BASE   = "https://api.jsonbin.io/v3";
 
-async function gistLoad(test) {
+// JSONBin has two separate bins: one for live, one for test
+// We use a simple convention: store {live:{...}, test:{...}} in one bin
+async function binLoad() {
   if (NOT_CONFIGURED) {
-    const raw = localStorage.getItem(test ? "f1_draft_test" : "f1_draft_live");
-    return raw ? JSON.parse(raw) : { picks:{}, started:false };
+    const raw = localStorage.getItem("f1_draft_2026");
+    return raw ? JSON.parse(raw) : { live:{ picks:{}, started:false }, test:{ picks:{}, started:false } };
   }
   try {
-    const r = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
-      headers: { Authorization: `token ${GIST_TOKEN}`, Accept: "application/vnd.github.v3+json" }
+    const r = await fetch(`${JSONBIN_BASE}/b/${BIN_ID}/latest`, {
+      headers: { "X-Access-Key": ACCESS_KEY }
     });
     const data = await r.json();
-    const content = data.files?.[test ? "draft_test.json" : GIST_FILE]?.content;
-    if (content) return JSON.parse(content);
-  } catch {}
-  return { picks:{}, started:false };
+    return data.record ?? { live:{ picks:{}, started:false }, test:{ picks:{}, started:false } };
+  } catch {
+    return { live:{ picks:{}, started:false }, test:{ picks:{}, started:false } };
+  }
 }
 
-async function gistSave(draft, test) {
+async function binSave(record) {
   if (NOT_CONFIGURED) {
-    localStorage.setItem(test ? "f1_draft_test" : "f1_draft_live", JSON.stringify(draft));
+    localStorage.setItem("f1_draft_2026", JSON.stringify(record));
     return;
   }
   try {
-    const fileName = test ? "draft_test.json" : GIST_FILE;
-    await fetch(`https://api.github.com/gists/${GIST_ID}`, {
-      method: "PATCH",
-      headers: { Authorization: `token ${GIST_TOKEN}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ files: { [fileName]: { content: JSON.stringify(draft) } } })
+    await fetch(`${JSONBIN_BASE}/b/${BIN_ID}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "X-Access-Key": ACCESS_KEY },
+      body: JSON.stringify(record)
     });
   } catch {}
-}
-
-async function gistClear(test) {
-  return gistSave({ picks:{}, started:false }, test);
 }
 
 // ── Driver Card ───────────────────────────────────────────────────────────
@@ -152,23 +146,22 @@ function DriverCard({ driver, selected, onSelect, picked }) {
       style={{
         background: picked ? "#0a0a12" : selected ? tc+"18" : "#0d0d1a",
         border: `2px solid ${picked ? "#1a1a2a" : selected ? tc : "#1e1e2e"}`,
-        borderRadius: 10, overflow: "hidden", position: "relative",
+        borderRadius:10, overflow:"hidden", position:"relative",
         cursor: picked ? "default" : "pointer",
-        transition: "all 0.15s", opacity: picked ? 0.35 : 1,
+        transition:"all 0.15s", opacity: picked ? 0.35 : 1,
         boxShadow: selected && !picked ? `0 0 18px ${tc}33` : "none",
       }}
     >
       <div style={{ width:"100%", aspectRatio:"1/1", overflow:"hidden", position:"relative", background:`linear-gradient(160deg,${tc}33 0%,#0a0a14 60%)` }}>
         {!imgFailed ? (
-          <img
-            src={driver.img} alt={driver.name} crossOrigin="anonymous"
-            style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"top center", display:"block", filter: picked ? "grayscale(1) opacity(0.4)" : "none", transition:"filter 0.2s" }}
+          <img src={driver.img} alt={driver.name}
+            style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"top center", display:"block", filter:picked?"grayscale(1) opacity(0.4)":"none", transition:"filter 0.2s" }}
             onError={() => setImgFailed(true)}
           />
         ) : (
           <div style={{ width:"100%", height:"100%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:52 }}>{driver.flag}</div>
         )}
-        <div style={{ position:"absolute", top:7, right:9, fontSize:12, fontWeight:800, color: picked ? "#333" : tc, fontFamily:"monospace", textShadow: picked ? "none" : `0 0 10px ${tc}` }}>
+        <div style={{ position:"absolute", top:7, right:9, fontSize:12, fontWeight:800, color:picked?"#333":tc, fontFamily:"monospace", textShadow:picked?"none":`0 0 10px ${tc}` }}>
           #{driver.number}
         </div>
         {picked && (
@@ -179,36 +172,46 @@ function DriverCard({ driver, selected, onSelect, picked }) {
         )}
       </div>
       <div style={{ padding:"9px 11px 11px" }}>
-        <div style={{ fontSize:11, fontWeight:700, color: picked ? "#445" : "#fff", lineHeight:1.25, marginBottom:5 }}>{driver.name}</div>
+        <div style={{ fontSize:11, fontWeight:700, color:picked?"#445":"#fff", lineHeight:1.25, marginBottom:5 }}>{driver.name}</div>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:4 }}>
-          <span style={{ fontSize:8, padding:"2px 6px", borderRadius:3, background:tc+(picked?"11":"22"), border:`1px solid ${tc}${picked?"22":"66"}`, color: picked ? "#556" : tc, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", maxWidth:"70%" }}>{driver.team}</span>
-          <span style={{ fontSize:8, color: picked ? "#2a2a3a" : "#4a5568" }}>#{driver.avg}</span>
+          <span style={{ fontSize:8, padding:"2px 6px", borderRadius:3, background:tc+(picked?"11":"22"), border:`1px solid ${tc}${picked?"22":"66"}`, color:picked?"#556":tc, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", maxWidth:"72%" }}>{driver.team}</span>
+          <span style={{ fontSize:8, color:picked?"#2a2a3a":"#4a5568" }}>#{driver.avg}</span>
         </div>
       </div>
     </div>
   );
 }
 
-// ── Setup screen ─────────────────────────────────────────────────────────
-function SetupScreen() {
+// ── Setup screen ──────────────────────────────────────────────────────────
+function SetupScreen({ onBack }) {
   return (
     <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", padding:24 }}>
-      <div style={{ maxWidth:560, background:"#0d0d1a", border:"1px solid #1e1e2e", borderRadius:12, padding:28 }}>
-        <div style={{ fontSize:9, letterSpacing:4, color:"#e8002d", marginBottom:6 }}>SETUP REQUIRED</div>
-        <h2 style={{ fontSize:20, fontWeight:700, color:"#fff", marginBottom:16 }}>Configure the Draft Room</h2>
-        <p style={{ fontSize:12, color:"#94a3b8", lineHeight:1.7, marginBottom:20 }}>
-          Edit the <code style={{ background:"#1e1e2e", padding:"1px 5px", borderRadius:3, color:"#64c4ff" }}>DRAFT_CONFIG</code> block at the top of <code style={{ background:"#1e1e2e", padding:"1px 5px", borderRadius:3, color:"#64c4ff" }}>index.html</code> with your GitHub credentials:
-        </p>
-        <div style={{ background:"#07070f", border:"1px solid #2a2a3a", borderRadius:8, padding:16, fontFamily:"monospace", fontSize:11, color:"#94a3b8", lineHeight:2, marginBottom:20 }}>
-          <span style={{ color:"#475569" }}>1.</span> Go to <span style={{ color:"#64c4ff" }}>gist.github.com</span> → New gist<br/>
-          <span style={{ color:"#475569" }}>2.</span> Filename: <span style={{ color:"#ffd700" }}>draft.json</span>, content: <span style={{ color:"#22c55e" }}>{"{}"}</span>, set to <strong style={{ color:"#fff" }}>Public</strong><br/>
-          <span style={{ color:"#475569" }}>3.</span> Copy the gist ID from the URL<br/>
-          <span style={{ color:"#475569" }}>4.</span> Go to <span style={{ color:"#64c4ff" }}>github.com/settings/tokens</span> → New token<br/>
-          <span style={{ color:"#475569" }}>5.</span> Select <span style={{ color:"#ffd700" }}>gist</span> scope only → Generate → Copy token<br/>
-          <span style={{ color:"#475569" }}>6.</span> Paste both into <span style={{ color:"#ffd700" }}>DRAFT_CONFIG</span> in index.html<br/>
+      <div style={{ maxWidth:580, width:"100%", background:"#0d0d1a", border:"1px solid #1e1e2e", borderRadius:12, padding:28 }}>
+        {onBack && <button onClick={onBack} style={{ background:"transparent", border:"1px solid #2a2a3a", color:"#64748b", borderRadius:4, padding:"4px 10px", fontSize:10, cursor:"pointer", marginBottom:20 }}>← Back</button>}
+        <div style={{ fontSize:8, letterSpacing:5, color:"#e8002d", marginBottom:6 }}>SETUP</div>
+        <h2 style={{ fontSize:18, fontWeight:700, color:"#fff", marginBottom:16 }}>Connect to JSONBin</h2>
+        <div style={{ display:"flex", flexDirection:"column", gap:12, marginBottom:20 }}>
+          {[
+            { n:"1", text:"Go to", link:"jsonbin.io", href:"https://jsonbin.io", rest:" and create a free account" },
+            { n:"2", text:'Click "API Keys" → "Create Access Key" → copy it' },
+            { n:"3", text:'Click "New Bin" → paste ', code:"{}", rest:' as content → make it Private → Create' },
+            { n:"4", text:"Copy the Bin ID from the response or URL" },
+            { n:"5", text:"Open ", code:"index.html", rest:", find DRAFT_CONFIG at the top, and paste both values in" },
+            { n:"6", text:"Save the file, push to your GitHub repo, done 🏁" },
+          ].map(({ n, text, link, href, rest, code }) => (
+            <div key={n} style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
+              <div style={{ width:22, height:22, borderRadius:"50%", background:"#e8002d22", border:"1px solid #e8002d44", display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, color:"#e8002d", flexShrink:0, marginTop:1 }}>{n}</div>
+              <div style={{ fontSize:12, color:"#94a3b8", lineHeight:1.6 }}>
+                {text}
+                {link && <a href={href} target="_blank" style={{ color:"#64c4ff" }}>{link}</a>}
+                {code && <code style={{ background:"#1e1e2e", padding:"1px 5px", borderRadius:3, color:"#ffd700", fontSize:11 }}>{code}</code>}
+                {rest}
+              </div>
+            </div>
+          ))}
         </div>
-        <div style={{ background:"#0a1500", border:"1px solid #22c55e33", borderRadius:8, padding:12, fontSize:11, color:"#86efac" }}>
-          💡 Until configured, the app runs in <strong>local-only mode</strong> — picks are saved to your browser but not shared. Great for testing!
+        <div style={{ background:"#0a1000", border:"1px solid #22c55e22", borderRadius:8, padding:14, fontSize:11, color:"#86efac", lineHeight:1.7 }}>
+          <strong>Is it safe?</strong> Your Access Key can only read/write bins on your JSONBin account — nothing else. Make the bin <strong>Private</strong> so only requests with your key can read it (the app sends the key, your players don't need to do anything). Worst case: someone who finds the key can only mess with a draft JSON file.
         </div>
       </div>
     </div>
@@ -217,7 +220,7 @@ function SetupScreen() {
 
 // ── Main App ──────────────────────────────────────────────────────────────
 function App() {
-  const [draft, setDraft]           = useState({ picks:{}, started:false });
+  const [record, setRecord]         = useState(null); // full bin: {live, test}
   const [loading, setLoading]       = useState(true);
   const [selected, setSelected]     = useState(null);
   const [view, setView]             = useState("board");
@@ -227,27 +230,33 @@ function App() {
   const [showSetup, setShowSetup]   = useState(false);
   const prevPickCount               = useRef(0);
 
+  const draft    = record ? (testMode ? record.test : record.live) : { picks:{}, started:false };
+  const draftKey = testMode ? "test" : "live";
+
   const load = useCallback(async () => {
-    const d = await gistLoad(testMode);
-    setDraft(d);
-    prevPickCount.current = Object.keys(d.picks).length;
+    const rec = await binLoad();
+    setRecord(rec);
+    const d = testMode ? rec.test : rec.live;
+    prevPickCount.current = Object.keys(d?.picks ?? {}).length;
     setLoading(false);
   }, [testMode]);
 
   useEffect(() => { setLoading(true); setSelected(null); setFlash(null); load(); }, [testMode]);
 
-  // Poll
+  // Poll for remote picks
   useEffect(() => {
     const iv = setInterval(async () => {
-      const fresh = await gistLoad(testMode);
-      const newCount = Object.keys(fresh.picks).length;
+      const fresh = await binLoad();
+      const freshDraft = testMode ? fresh.test : fresh.live;
+      const newCount   = Object.keys(freshDraft?.picks ?? {}).length;
       if (newCount > prevPickCount.current) {
-        const newPn = Object.keys(fresh.picks).find(k => !draft.picks[k]);
+        const currentPicks = draft?.picks ?? {};
+        const newPn = Object.keys(freshDraft.picks).find(k => !currentPicks[k]);
         if (newPn) {
           const po = PICK_ORDER[Number(newPn)-1];
-          showFlash({ player:po.player, driver:fresh.picks[newPn], pool:po.pool, remote:true });
+          showFlash({ player:po.player, driver:freshDraft.picks[newPn], pool:po.pool, remote:true });
         }
-        setDraft(fresh);
+        setRecord(fresh);
         prevPickCount.current = newCount;
       }
     }, POLL_MS);
@@ -256,24 +265,25 @@ function App() {
 
   function showFlash(data) {
     setFlash(data);
-    setTimeout(() => setFlash(null), 4000);
+    setTimeout(() => setFlash(null), 4500);
   }
 
-  const pickedDrivers = new Set(Object.values(draft.picks));
-  const nextPick      = PICK_ORDER.find(p => !draft.picks[p.pickNum]) ?? null;
-  const isDone        = Object.keys(draft.picks).length === PICK_ORDER.length;
+  const pickedDrivers = new Set(Object.values(draft?.picks ?? {}));
+  const nextPick      = PICK_ORDER.find(p => !draft?.picks?.[p.pickNum]) ?? null;
+  const isDone        = Object.keys(draft?.picks ?? {}).length === PICK_ORDER.length;
   const currentPool   = nextPick?.pool === "A" ? POOL_A : POOL_B;
-  const madeNums      = Object.keys(draft.picks).map(Number).sort((a,b)=>b-a);
-  const pct           = Math.round(Object.keys(draft.picks).length / PICK_ORDER.length * 100);
+  const madeNums      = Object.keys(draft?.picks ?? {}).map(Number).sort((a,b)=>b-a);
+  const pct           = Math.round(Object.keys(draft?.picks ?? {}).length / PICK_ORDER.length * 100);
   const T             = TEAM_COLORS;
 
   async function makePick(name) {
-    if (!nextPick || !name || saving) return;
+    if (!nextPick || !name || saving || !record) return;
     setSaving(true);
-    const newDraft = { picks:{ ...draft.picks, [nextPick.pickNum]:name }, started:true };
-    setDraft(newDraft);
+    const newDraft  = { picks:{ ...draft.picks, [nextPick.pickNum]:name }, started:true };
+    const newRecord = { ...record, [draftKey]:newDraft };
+    setRecord(newRecord);
     prevPickCount.current = Object.keys(newDraft.picks).length;
-    await gistSave(newDraft, testMode);
+    await binSave(newRecord);
     setSaving(false);
     showFlash({ player:nextPick.player, driver:name, pool:nextPick.pool });
     setSelected(null);
@@ -281,30 +291,25 @@ function App() {
 
   async function handleReset() {
     if (!confirm(testMode ? "Clear all test picks?" : "Reset the REAL draft? Cannot be undone.")) return;
-    await gistClear(testMode);
-    setDraft({ picks:{}, started:false });
+    const empty     = { picks:{}, started:false };
+    const newRecord = { ...record, [draftKey]:empty };
+    setRecord(newRecord);
     prevPickCount.current = 0;
+    await binSave(newRecord);
     setSelected(null); setFlash(null);
   }
 
   function getPlayerPicks(player) {
     const r1 = PICK_ORDER.find(p => p.player===player && p.round===1);
     const r2 = PICK_ORDER.find(p => p.player===player && p.round===2);
-    return { a: r1 ? draft.picks[r1.pickNum] : null, b: r2 ? draft.picks[r2.pickNum] : null };
+    return { a: r1 ? draft.picks?.[r1.pickNum] : null, b: r2 ? draft.picks?.[r2.pickNum] : null };
   }
 
-  const acc = (color, alpha) => color + Math.round(alpha*255).toString(16).padStart(2,"0");
+  if (showSetup) return <SetupScreen onBack={() => setShowSetup(false)} />;
 
   if (loading) return (
     <div style={{ height:"100vh", display:"flex", alignItems:"center", justifyContent:"center" }}>
       <div style={{ color:"#e8002d", fontSize:13, letterSpacing:5, animation:"pulse 1.2s infinite" }}>LOADING DRAFT…</div>
-    </div>
-  );
-
-  if (showSetup) return (
-    <div>
-      <button onClick={() => setShowSetup(false)} style={{ position:"fixed", top:16, left:16, background:"transparent", border:"1px solid #2a2a3a", color:"#64748b", borderRadius:4, padding:"5px 10px", fontSize:10, cursor:"pointer", zIndex:99 }}>← Back</button>
-      <SetupScreen/>
     </div>
   );
 
@@ -314,8 +319,8 @@ function App() {
   return (
     <div style={{ minHeight:"100vh", background:"#07070f" }}>
 
-      {/* Header */}
-      <div style={{ background: isTest ? "linear-gradient(135deg,#0d1a0d,#09120a)" : "linear-gradient(135deg,#0f0f22,#1a0707)", borderBottom:`2px solid ${acc}33`, padding:"16px 18px", display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:10, position:"sticky", top:0, zIndex:50 }}>
+      {/* ── HEADER ── */}
+      <div style={{ background:isTest?"linear-gradient(135deg,#0d1a0d,#09120a)":"linear-gradient(135deg,#0f0f22,#1a0707)", borderBottom:`2px solid ${accent}33`, padding:"16px 18px", display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:10, position:"sticky", top:0, zIndex:50 }}>
         <div>
           <div style={{ fontSize:8, letterSpacing:5, color:accent, marginBottom:3 }}>FANTASY F1 2026 · {isTest?"TEST MODE":"LIVE DRAFT"}</div>
           <h1 style={{ fontSize:"clamp(14px,3vw,20px)", fontWeight:700, color:"#fff", letterSpacing:-0.5 }}>
@@ -323,28 +328,28 @@ function App() {
           </h1>
         </div>
         <div style={{ display:"flex", gap:7, flexWrap:"wrap", alignItems:"center" }}>
-          <button onClick={() => setTestMode(t=>!t)} style={{ padding:"4px 11px", fontSize:9, letterSpacing:1, background: isTest?"#22c55e22":"transparent", border:`1px solid ${isTest?"#22c55e":"#2a3a2a"}`, color:isTest?"#22c55e":"#3a5a3a", borderRadius:4, cursor:"pointer" }}>
-            {isTest ? "🧪 TEST ON" : "🧪 Test Mode"}
+          <button onClick={() => setTestMode(t=>!t)} style={{ padding:"4px 11px", fontSize:9, letterSpacing:1, background:isTest?"#22c55e22":"transparent", border:`1px solid ${isTest?"#22c55e":"#2a3a2a"}`, color:isTest?"#22c55e":"#3a5a3a", borderRadius:4, cursor:"pointer" }}>
+            {isTest?"🧪 TEST ON":"🧪 Test Mode"}
           </button>
           {["board","results"].map(v=>(
             <button key={v} onClick={()=>setView(v)} style={{ padding:"4px 12px", fontSize:9, letterSpacing:2, textTransform:"uppercase", background:view===v?accent:"transparent", border:`1px solid ${view===v?accent:"#2a2a3a"}`, color:view===v?(isTest?"#000":"#fff"):"#64748b", borderRadius:4, cursor:"pointer" }}>
               {v==="board"?"📋 Board":"🏆 Results"}
             </button>
           ))}
-          {draft.started && (
+          {draft?.started && (
             <button onClick={handleReset} style={{ padding:"4px 11px", fontSize:9, background:isTest?"#0a2a0a":"transparent", border:`1px solid ${isTest?"#22c55e55":"#3a1818"}`, color:isTest?"#22c55e":"#664444", borderRadius:4, cursor:"pointer" }}>
               {isTest?"🗑 Clear Test":"↺ Reset"}
             </button>
           )}
-          <button onClick={()=>setShowSetup(true)} style={{ padding:"4px 10px", fontSize:9, background:"transparent", border:"1px solid #1e2e3a", color:"#334a5a", borderRadius:4, cursor:"pointer" }} title="Setup / configure gist">⚙</button>
+          <button onClick={()=>setShowSetup(true)} style={{ padding:"4px 10px", fontSize:12, background:"transparent", border:"1px solid #1e2e3a", color:"#334a5a", borderRadius:4, cursor:"pointer" }} title="Setup">⚙</button>
         </div>
       </div>
 
       {/* Banners */}
       {NOT_CONFIGURED && (
         <div style={{ background:"#100a00", borderBottom:"1px solid #ff8c0033", padding:"7px 18px", display:"flex", alignItems:"center", gap:10 }}>
-          <span style={{ fontSize:11, color:"#ff8c00" }}>⚠ Running in local-only mode.</span>
-          <button onClick={()=>setShowSetup(true)} style={{ fontSize:10, background:"transparent", border:"1px solid #ff8c0055", color:"#ff8c00", borderRadius:3, padding:"2px 8px", cursor:"pointer" }}>Configure →</button>
+          <span style={{ fontSize:11, color:"#ff8c00" }}>⚠ Running in local-only mode — picks won't sync to other players.</span>
+          <button onClick={()=>setShowSetup(true)} style={{ fontSize:10, background:"transparent", border:"1px solid #ff8c0055", color:"#ff8c00", borderRadius:3, padding:"2px 8px", cursor:"pointer" }}>Setup →</button>
         </div>
       )}
       {isTest && (
@@ -353,17 +358,17 @@ function App() {
         </div>
       )}
 
-      {/* Progress */}
+      {/* Progress bar */}
       <div style={{ background:"#0a0a14", padding:"7px 18px", borderBottom:"1px solid #1e1e2e", display:"flex", alignItems:"center", gap:12 }}>
         <div style={{ flex:1, background:"#1e1e2e", borderRadius:4, height:4, overflow:"hidden" }}>
           <div style={{ width:`${pct}%`, height:"100%", background:isTest?"linear-gradient(90deg,#22c55e,#86efac)":"linear-gradient(90deg,#e8002d,#ff6060)", transition:"width 0.5s", borderRadius:4 }}/>
         </div>
-        <span style={{ fontSize:9, color:"#475569", whiteSpace:"nowrap" }}>{Object.keys(draft.picks).length}/{PICK_ORDER.length} · {pct}%</span>
+        <span style={{ fontSize:9, color:"#475569", whiteSpace:"nowrap" }}>{Object.keys(draft?.picks??{}).length}/{PICK_ORDER.length} · {pct}%</span>
         {saving && <span style={{ fontSize:8, color:"#e8002d", letterSpacing:2, animation:"pulse 0.8s infinite" }}>SAVING…</span>}
-        {!saving && draft.started && <span style={{ fontSize:8, color:"#22c55e", letterSpacing:2 }}>● LIVE</span>}
+        {!saving && draft?.started && <span style={{ fontSize:8, color:"#22c55e", letterSpacing:2 }}>● LIVE</span>}
       </div>
 
-      {/* Flash */}
+      {/* Flash notification */}
       {flash && (
         <div style={{ margin:"10px 18px 0", background:flash.remote?"#0a1a0a":"#0a150a", border:`1px solid ${flash.remote?"#22c55e55":"#22c55e88"}`, borderRadius:8, padding:"9px 14px", display:"flex", alignItems:"center", gap:10, animation:"slideIn 0.3s ease" }}>
           <span style={{ fontSize:16 }}>{flash.remote?"📡":"✅"}</span>
@@ -399,10 +404,11 @@ function App() {
             <div style={{ background:"linear-gradient(135deg,#0a1a0a,#0d0d1a)", border:"1px solid #22c55e55", borderRadius:10, padding:22, marginBottom:16, textAlign:"center" }}>
               <div style={{ fontSize:36, marginBottom:6 }}>🏆</div>
               <div style={{ fontSize:20, fontWeight:700, color:"#22c55e" }}>{isTest?"Test Complete!":"Draft Complete!"}</div>
-              <div style={{ fontSize:11, color:"#64748b", marginTop:4 }}>View the Results tab to see all picks</div>
+              <div style={{ fontSize:11, color:"#64748b", marginTop:4 }}>Switch to Results to see all picks</div>
             </div>
           )}
 
+          {/* Driver grid */}
           {!isDone && nextPick && (
             <>
               <div style={{ fontSize:9, letterSpacing:2, color:"#475569", marginBottom:10 }}>
@@ -416,7 +422,7 @@ function App() {
             </>
           )}
 
-          {/* History */}
+          {/* Pick history */}
           {madeNums.length > 0 && (
             <>
               <div style={{ fontSize:9, letterSpacing:2, color:"#475569", marginBottom:8, marginTop:6 }}>PICK HISTORY</div>
@@ -482,16 +488,14 @@ function App() {
         </div>
       )}
 
-      {/* Confirm bar */}
+      {/* ── STICKY CONFIRM BAR ── */}
       {selected && !isDone && nextPick && (() => {
         const sd = ALL.find(d=>d.name===selected);
         const tc = T[sd?.team]||"#888";
         return (
           <div style={{ position:"fixed", bottom:0, left:0, right:0, background:isTest?"linear-gradient(135deg,#041204,#07080a)":"linear-gradient(135deg,#08081e,#0f0404)", borderTop:`2px solid ${accent}`, padding:"11px 18px", display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:10, boxShadow:`0 -16px 48px ${accent}22`, zIndex:100 }}>
             <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-              <div style={{ position:"relative", flexShrink:0 }}>
-                <img src={sd?.img} alt={selected} style={{ width:52, height:52, borderRadius:8, objectFit:"cover", objectPosition:"top", border:`2px solid ${tc}55`, display:"block" }} onError={e=>{e.target.style.display="none"}}/>
-              </div>
+              <img src={sd?.img} alt={selected} style={{ width:52, height:52, borderRadius:8, objectFit:"cover", objectPosition:"top", border:`2px solid ${tc}55`, display:"block", flexShrink:0 }} onError={e=>{e.target.style.display="none"}}/>
               <div>
                 <div style={{ fontSize:8, color:"#64748b", marginBottom:2, letterSpacing:1 }}>{nextPick.player} SELECTS</div>
                 <div style={{ fontSize:18, fontWeight:700, color:"#fff", lineHeight:1.1 }}>{selected}</div>

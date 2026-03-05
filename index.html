@@ -38,6 +38,16 @@
 <script type="text/babel">
 const { useState, useEffect, useRef, useCallback } = React;
 
+function useWindowWidth() {
+  const [w, setW] = useState(window.innerWidth);
+  useEffect(() => {
+    const fn = () => setW(window.innerWidth);
+    window.addEventListener("resize", fn);
+    return () => window.removeEventListener("resize", fn);
+  }, []);
+  return w;
+}
+
 // ── Portrait URL ──────────────────────────────────────────────────────────
 function f1img(team, code) {
   return `https://media.formula1.com/image/upload/c_fill,w_300,h_300,g_north/q_auto/d_common:f1:2026:fallback:driver:2026fallbackdriverright.webp/v1740000000/common/f1/2026/${team}/${code}/2026${team}${code}right.webp`;
@@ -274,6 +284,7 @@ function App() {
   const [saving, setSaving]     = useState(false);
   const [testMode, setTestMode] = useState(false);
   const prevCount               = useRef(0);
+  const windowWidth             = useWindowWidth();
 
   const draftKey = testMode ? "test" : "live";
   const draft    = record?.[draftKey] ?? EMPTY_DRAFT;
@@ -478,7 +489,7 @@ function App() {
                 POOL {nextPick.pool} · {currentPool.filter(d=>!pickedNames.has(d.name)).length} remaining
                 {!isMyTurn && <span style={{ color:"#252535", marginLeft:8 }}>(view only)</span>}
               </div>
-              <div className="driver-grid" style={{ marginBottom:12 }}>
+              <div style={{ display:"grid", gridTemplateColumns: windowWidth <= 380 ? "repeat(3,1fr)" : "repeat(auto-fill,minmax(145px,1fr))", gap: windowWidth <= 380 ? 6 : 10, marginBottom:12 }}>
                 {currentPool.map(d => (
                   <DriverCard key={d.name} driver={d} selected={selected===d.name} picked={pickedNames.has(d.name)} locked={!isMyTurn} onSelect={setSelected}/>
                 ))}

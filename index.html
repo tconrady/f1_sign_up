@@ -243,10 +243,10 @@ function DriverCard({ driver, selected, onSelect, picked, locked }) {
         boxShadow:selected&&interactive?`0 0 16px ${tc}33`:"none",
       }}
     >
-      <div style={{ width:"100%", aspectRatio:"1/1", overflow:"hidden", position:"relative", background:`linear-gradient(160deg,${tc}33 0%,#0a0a14 60%)`, flexShrink:0 }}>
+      <div style={{ width:"100%", aspectRatio:"1/1", overflow:"hidden", position:"relative", background:`linear-gradient(160deg,${tc}33 0%,#0a0a14 80%)`, flexShrink:0 }}>
         {!imgFailed ? (
           <img src={driver.img} alt={driver.name}
-            style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"top", display:"block", filter:picked?"grayscale(0.6) brightness(0.75)":"none", transition:"filter 0.2s" }}
+            style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"top", display:"block", filter:picked?"grayscale(0.8) brightness(0.9)":"none", transition:"filter 0.2s" }}
             onError={() => setImgFailed(true)}
           />
         ) : (

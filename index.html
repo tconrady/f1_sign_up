@@ -47,7 +47,8 @@
   window.DRAFT_CONFIG = {
     BIN_ID:     "69a9e4d9ae596e708f6328f3",
     ACCESS_KEY: "$2a$10$EL1MYjX3QurIiGkwqyL/M.OJuQf7W/EFHCodoJAzQ0eum8WKd66KS",
-    POLL_MS:    8000
+    POLL_MS:    8000,
+    RESET_PASSWORD: "f1draft2026"
   };
 </script>
 
@@ -128,7 +129,7 @@ const PICK_ORDER = [
 
 // ── JSONBin ───────────────────────────────────────────────────────────────
 // Extract configuration values (Bin ID, Access Key, Poll interval) from the global DRAFT_CONFIG object set in the <script> above
-const { BIN_ID, ACCESS_KEY, POLL_MS } = window.DRAFT_CONFIG;
+const { BIN_ID, ACCESS_KEY, POLL_MS, RESET_PASSWORD } = window.DRAFT_CONFIG;
 const NOT_CONFIGURED = BIN_ID === "YOUR_BIN_ID_HERE";
 const JSONBIN_BASE   = "https://api.jsonbin.io/v3";
 const EMPTY_DRAFT    = { picks:{}, started:false };
@@ -387,6 +388,9 @@ function App() {
   }
 
   async function handleReset() {
+    const pw = window.prompt("Enter reset password:");
+    if (pw === null) return;
+    if (pw !== RESET_PASSWORD) { window.alert("Incorrect password."); return; }
     if (!confirm(testMode ? "Clear all test picks?" : "Reset the REAL draft? Cannot be undone.")) return;
     const newRecord = { ...record, [draftKey]:{ ...EMPTY_DRAFT } };
     setRecord(newRecord);

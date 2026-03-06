@@ -385,9 +385,6 @@ function App() {
           </div>
         </div>
         <div style={{ display:"flex", gap:5, flexWrap:"wrap", alignItems:"center" }}>
-          <button onClick={() => setTestMode(t=>!t)} style={{ padding:"3px 8px", fontSize:14, background:testMode?"#22c55e22":"transparent", border:`1px solid ${testMode?"#22c55e":"#2a3a2a"}`, color:testMode?"#22c55e":"#3a5a3a", borderRadius:4, cursor:"pointer" }}>
-            {testMode?"🧪 ON":"🧪"}
-          </button>
           {["board","results"].map(v => (
             <button key={v} onClick={()=>setView(v)} style={{ padding:"3px 10px", fontSize:22, letterSpacing:1, textTransform:"uppercase", background:view===v?accent:"transparent", border:`1px solid ${view===v?accent:"#9DA8B9"}`, color:view===v?(testMode?"#000":"#fff"):"#b0bdd0", borderRadius:4, cursor:"pointer" }}>
               {v==="board"?"Board":"Results"}
@@ -594,8 +591,11 @@ function App() {
       {/* ── VERSION FOOTER ── */}
       <div style={{ padding:"18px 14px 24px", textAlign:"center", borderTop:"1px solid #b0bdd0", marginTop:8 }}>
         <span style={{ fontSize:20, color:"#b0bdd0", letterSpacing:2, userSelect:"none" }}>
-          FANTASY F1 2026 · DRAFT ROOM · v1.1.1
+          FANTASY F1 2026 · DRAFT ROOM · v1.1.2
         </span>
+          <button onClick={() => setTestMode(t=>!t)} style={{ padding:"3px 8px", fontSize:14, background:testMode?"#22c55e22":"transparent", border:`1px solid ${testMode?"#22c55e":"#2a3a2a"}`, color:testMode?"#22c55e":"#3a5a3a", borderRadius:4, cursor:"pointer" }}>
+            {testMode?"🧪 ON":"🧪"}
+          </button>
       </div>
     </div>
   );

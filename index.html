@@ -47,7 +47,7 @@
   window.DRAFT_CONFIG = {
     BIN_ID:     "69a9e4d9ae596e708f6328f3",
     ACCESS_KEY: "$2a$10$EL1MYjX3QurIiGkwqyL/M.OJuQf7W/EFHCodoJAzQ0eum8WKd66KS",
-    POLL_MS:    8000,
+    POLL_MS:    8000
   };
 </script>
 
@@ -127,6 +127,7 @@ const PICK_ORDER = [
 ];
 
 // ── JSONBin ───────────────────────────────────────────────────────────────
+// Extract configuration values (Bin ID, Access Key, Poll interval) from the global DRAFT_CONFIG object set in the <script> above
 const { BIN_ID, ACCESS_KEY, POLL_MS } = window.DRAFT_CONFIG;
 const NOT_CONFIGURED = BIN_ID === "YOUR_BIN_ID_HERE";
 const JSONBIN_BASE   = "https://api.jsonbin.io/v3";
@@ -579,7 +580,7 @@ function App() {
                       <div style={{ fontSize:13, letterSpacing:2, color:gold?"#ffd700":"#b0bdd0", marginBottom:3 }}>{label} · PICK #{pn}</div>
                       {dn ? (
                         <div style={{ background:gold?"#1a1500":"#0f0f1a", border:`1px solid ${gold?"#ffd70033":"#556677"}`, borderRadius:7, padding:"6px 8px", display:"flex", alignItems:"center", gap:7 }}>
-                          <img src={d?.img} alt={dn} style={{ width:36, height:36, borderRadius:5, objectFit:"cover", objectPosition:"center", flexShrink:0 }} onError={e=>{e.target.style.display="none"}}/>
+                          <img src={d?.img} alt={dn} style={{ width:36, height:36, borderRadius:5, objectFit:"cover", objectPosition:"center", flexShrink:0 }} onError={e => { if (e.target instanceof HTMLImageElement) e.target.style.display = "none"; }}/>
                           <div style={{ flex:1, minWidth:0 }}>
                             <div style={{ fontSize:20, fontWeight:700, color:"#fff", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{dn}</div>
                             <div style={{ fontSize:14, color:T[d?.team]||"#888", marginTop:1 }}>{d?.team}</div>

@@ -101,8 +101,8 @@ const POOL_A = seededShuffle(POOL_A_BASE, 20260308);
 const POOL_B = seededShuffle(POOL_B_BASE, 20260309);
 const ALL    = [...POOL_A_BASE, ...POOL_B_BASE];
 
-const PLAYERS_R1 = ["Alyssa","Nora","Jay","Margaret","Cecelia","Charlie","Sarah","Timo","Mary Beth","Jane","David"];
-const PLAYERS_R2 = ["David","Jane","Mary Beth","Timo","Sarah","Charlie","Cecelia","Margaret","Jay","Nora","Alyssa"];
+const PLAYERS_R1 = ["Alyssa","Nora","Jay","Margaret","Cecelia","Timo","Mary Beth","Jane","David","Charlie","Sarah"];
+const PLAYERS_R2 = ["Sarah","Charlie","David","Jane","Mary Beth","Timo","Cecelia","Margaret","Jay","Nora","Alyssa"];
 const ALL_PLAYERS = [...new Set([...PLAYERS_R1, ...PLAYERS_R2])];
 
 const PICK_ORDER = [
@@ -158,7 +158,7 @@ function PlayerSelect({ onSelect }) {
     <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:24 }}>
       <div style={{ fontSize:13, letterSpacing:5, color:"#e8002d", marginBottom:8 }}>FANTASY F1 2026</div>
       <h1 style={{ fontSize:"clamp(28px,6vw,42px)", fontWeight:700, color:"#fff", marginBottom:6, letterSpacing:-1 }}>🏁 Draft Room</h1>
-      <p style={{ fontSize:18, color:"#b0bdd0", marginBottom:28 }}>Select your name to continue</p>
+      <p style={{ fontSize:20, color:"#fff", marginBottom:28 }}>Select your name to continue</p>
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:8, width:"100%", maxWidth:500 }}>
         {ALL_PLAYERS.map(player => {
           const r1 = PICK_ORDER.find(p => p.player===player && p.round===1);
@@ -171,7 +171,7 @@ function PlayerSelect({ onSelect }) {
               onMouseLeave={e => { e.currentTarget.style.borderColor="#1e1e2e"; e.currentTarget.style.background="#0d0d1a"; }}
             >
               <div style={{ fontSize:20, fontWeight:700, marginBottom:3 }}>{player}</div>
-              <div style={{ fontSize:14, color:"#b0bdd0" }}>Pick #{r1?.pickNum} first</div>
+              <div style={{ fontSize:14, color:"#b0bdd0" }}>Pick #{r1?.pickNum}</div>
             </button>
           );
         })}

@@ -263,7 +263,7 @@ function DriverCard({ driver, selected, onSelect, picked, locked }) {
         borderRadius:10, overflow:"hidden", position:"relative",
         cursor:interactive?"pointer":"default",
         transition:"all 0.15s",
-        opacity:picked?0.6:locked?0.55:1,
+        opacity:picked?0.6:1,
         boxShadow:selected&&interactive?`0 0 16px ${tc}33`:"none",
       }}
     >

@@ -47,7 +47,7 @@
   window.DRAFT_CONFIG = {
     BIN_ID:     "69a9e4d9ae596e708f6328f3",
     ACCESS_KEY: "$2a$10$EL1MYjX3QurIiGkwqyL/M.OJuQf7W/EFHCodoJAzQ0eum8WKd66KS",
-    POLL_MS:    8000,
+    POLL_MS:    10000,
     RESET_PASSWORD: "f1draft2026"
   };
 </script>
@@ -343,6 +343,7 @@ function App() {
   // Poll for remote changes
   useEffect(() => {
     const iv = setInterval(async () => {
+      if (document.hidden) return;
       const fresh = await binLoad();
       const fd    = fresh[draftKey];
       const nc    = Object.keys(fd?.picks ?? {}).length;

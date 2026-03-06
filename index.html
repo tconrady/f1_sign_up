@@ -14,6 +14,17 @@
     ::-webkit-scrollbar-thumb { background: #2a2a3a; border-radius: 3px; }
     @keyframes slideIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
     @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+    /* Responsive footer padding and margin */
+    .footer-responsive {
+      padding: 4vw 3vw 6vw;
+      margin-top: 2vw;
+    }
+    @media (min-width: 600px) {
+      .footer-responsive {
+        padding: 18px 14px 24px;
+        margin-top: 8px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -390,11 +401,6 @@ function App() {
               {v==="board"?"Board":"Results"}
             </button>
           ))}
-          {draft.started && (
-            <button onClick={handleReset} style={{ padding:"3px 8px", fontSize:14, background:"transparent", border:`1px solid ${testMode?"#22c55e44":"#3a1818"}`, color:testMode?"#22c55e":"#664444", borderRadius:4, cursor:"pointer" }}>
-              {testMode?"🗑":"↺"}
-            </button>
-          )}
         </div>
       </div>
 
@@ -589,13 +595,18 @@ function App() {
       })()}
 
       {/* ── VERSION FOOTER ── */}
-      <div style={{ padding:"18px 14px 24px", textAlign:"center", borderTop:"1px solid #b0bdd0", marginTop:8 }}>
+      <div className="footer-responsive" style={{ textAlign:"center", borderTop:"1px solid #b0bdd0" }}>
         <span style={{ fontSize:20, color:"#b0bdd0", letterSpacing:2, userSelect:"none" }}>
-          FANTASY F1 2026 · DRAFT ROOM · v1.1.2
+          FANTASY F1 2026 · DRAFT ROOM · v1.1.2 · 
         </span>
           <button onClick={() => setTestMode(t=>!t)} style={{ padding:"3px 8px", fontSize:14, background:testMode?"#22c55e22":"transparent", border:`1px solid ${testMode?"#22c55e":"#2a3a2a"}`, color:testMode?"#22c55e":"#3a5a3a", borderRadius:4, cursor:"pointer" }}>
             {testMode?"🧪 ON":"🧪"}
           </button>
+          {draft.started && (
+            <button onClick={handleReset} style={{ padding:"3px 8px", fontSize:14, background:"transparent", border:`1px solid ${testMode?"#22c55e44":"#3a1818"}`, color:testMode?"#22c55e":"#664444", borderRadius:4, cursor:"pointer" }}>
+              {testMode?"🗑":"↺"}
+            </button>
+          )}
       </div>
     </div>
   );

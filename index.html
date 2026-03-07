@@ -276,9 +276,9 @@ function DriverCard({ driver, selected, onSelect, picked, locked }) {
         ) : (
           <div style={{ width:"100%", height:"100%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:64 }}>{driver.flag}</div>
         )}
-        <div style={{ position:"absolute", top:5, right:6, fontSize:20, fontWeight:800, color:picked?"#333":tc, fontFamily:"monospace", textShadow:picked?"none":`0 0 8px ${tc}` }}>
-          #{driver.number}
-        </div>
+        // <div style={{ position:"absolute", top:5, right:6, fontSize:20, fontWeight:800, color:picked?"#333":tc, fontFamily:"monospace", textShadow:picked?"none":`0 0 8px ${tc}` }}>
+        //   #{driver.number}
+        // </div>
         {picked && (
           <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center", background:"#00000099", fontSize:30 }}>✓</div>
         )}
